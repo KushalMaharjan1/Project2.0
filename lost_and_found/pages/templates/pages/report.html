@@ -1,0 +1,58 @@
+{% extends "pages/base.html" %}
+
+{% block content %}
+
+<h1>Report Lost or Found Item</h1>
+<p style="color:#667085;">Fill in the details below to report a lost or found item.</p>
+
+<section class="form-panel">
+<form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+        <div class="form-group">
+            <label>Title *</label>
+            <input type="text" name="title" placeholder="e.g. Black Wallet" required>
+        </div>
+        <div class="form-group">
+            <label>Status *</label>
+            <select name="status">
+                <option value="LOST">LOST</option>
+                <option value="FOUND">FOUND</option>
+                <option value="RESOLVED">RESOLVED</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Category</label>
+            <input type="text" name="category" placeholder="e.g. Electronics">
+        </div>
+        <div class="form-group">
+            <label>Location</label>
+            <input type="text" name="location" placeholder="e.g. Library">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" name="date">
+        </div>
+        <div class="form-group">
+            <label>Contact</label>
+            <input type="text" name="contact" placeholder="Your name">
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+        <label>Description</label>
+        <textarea name="description" rows="4"></textarea>
+    </div>
+
+    <button type="submit" class="button blue-button">Submit</button>
+    <button type="reset" class="button" style="background:#eef1f6;">Reset</button>
+</form>
+</section>
+
+{% endblock %}

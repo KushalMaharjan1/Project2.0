@@ -1,0 +1,58 @@
+{% extends "pages/base.html" %}
+
+{% block content %}
+
+<h1>Edit Item</h1>
+<p style="color:#667085;">Update the details for this item.</p>
+
+<section class="form-panel">
+<form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+        <div class="form-group">
+            <label>Title *</label>
+            <input type="text" name="title" value="{{ item.title }}" required>
+        </div>
+        <div class="form-group">
+            <label>Status *</label>
+            <select name="status">
+                <option value="LOST" {% if item.status == "LOST" %}selected{% endif %}>LOST</option>
+                <option value="FOUND" {% if item.status == "FOUND" %}selected{% endif %}>FOUND</option>
+                <option value="RESOLVED" {% if item.status == "RESOLVED" %}selected{% endif %}>RESOLVED</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Category</label>
+            <input type="text" name="category" value="{{ item.category }}">
+        </div>
+        <div class="form-group">
+            <label>Location</label>
+            <input type="text" name="location" value="{{ item.location }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" name="date" value="{{ item.date }}">
+        </div>
+        <div class="form-group">
+            <label>Contact</label>
+            <input type="text" name="contact" value="{{ item.contact }}">
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+        <label>Description</label>
+        <textarea name="description" rows="4">{{ item.description }}</textarea>
+    </div>
+
+    <button type="submit" class="button blue-button">Save Changes</button>
+    <a class="button" style="background:#eef1f6; color:#172033;" href="{% url 'detail' item_id %}">Cancel</a>
+</form>
+</section>
+
+{% endblock %}

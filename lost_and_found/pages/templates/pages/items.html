@@ -1,0 +1,66 @@
+{% extends "pages/base.html" %}
+
+{% block content %}
+
+<h1>Browse Items</h1>
+<p style="color:#667085;">Search and filter lost and found items.</p>
+
+<section class="panel">
+    <div style="padding:20px; background:#edf5ff;">
+        <h3>Search and Filter</h3>
+        <form method="get" style="display:flex; gap:10px;">
+            <input type="text" name="q" placeholder="Search by title or location..." value="{{ query }}">
+            <select name="status" style="max-width:160px;">
+                <option value="">All statuses</option>
+                <option value="LOST" {% if status_filter == "LOST" %}selected{% endif %}>LOST</option>
+                <option value="FOUND" {% if status_filter == "FOUND" %}selected{% endif %}>FOUND</option>
+                <option value="RESOLVED" {% if status_filter == "RESOLVED" %}selected{% endif %}>RESOLVED</option>
+            </select>
+            <button type="submit" class="button blue-button" style="white-space:nowrap;">Search</button>
+        </form>
+    </div>
+
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Date</th>
+            <th></th>
+        </tr>
+        {% for idx, item in items %}
+        <tr>
+            <td>{{ item.title }}</td>
+            <td>
+                {% if item.status == "LOST" %}
+                    <span class="badge badge-lost">LOST</span>
+                {% elif item.status == "FOUND" %}
+                    <span class="badge badge-found">FOUND</span>
+                {% else %}
+                    <span class="badge badge-resolved">RESOLVED</span>
+                {% endif %}
+            </td>
+            <td>{{ item.category }}</td>
+            <td>{{ item.location }}</td>
+            <td>{{ item.date }}</td>
+            <td style="white-space:nowrap;">
+                <a class="view-link" href="{% url 'detail' idx %}">View</a>
+                &nbsp;|&nbsp;
+                <a class="view-link" href="{% url 'edit_item' idx %}">Edit</a>
+                &nbsp;|&nbsp;
+                <form method="post" action="{% url 'delete_item' idx %}" style="display:inline;" onsubmit="return confirm('Delete this item?');">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none; border:none; color:#b42318; cursor:pointer; padding:0; font-size:13px; text-decoration:underline;">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" style="text-align:center; color:#667085;">No items found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</section>
+
+{% endblock %}

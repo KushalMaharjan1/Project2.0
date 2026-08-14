@@ -1,0 +1,68 @@
+{% extends "pages/base.html" %}
+
+{% block content %}
+
+<section class="hero">
+    <div>
+        <h1>Lost &amp; Found Management System</h1>
+        <p>Report lost items, register found items, search records and track resolutions.</p>
+        <a class="button blue-button" href="{% url 'report' %}">＋ Report an Item</a>
+    </div>
+    <div class="hero-icon" style="font-size: 48px;">🔍</div>
+</section>
+
+<div class="stats">
+    <div class="stat-card">
+        <div class="num">{{ total }}</div>
+        <div class="label">Total Items</div>
+    </div>
+    <div class="stat-card">
+        <div class="num">{{ lost }}</div>
+        <div class="label">Lost Items</div>
+    </div>
+    <div class="stat-card">
+        <div class="num">{{ found }}</div>
+        <div class="label">Found Items</div>
+    </div>
+    <div class="stat-card">
+        <div class="num">{{ resolved }}</div>
+        <div class="label">Resolved Items</div>
+    </div>
+</div>
+
+<h3>Recent Reports</h3>
+
+<div class="panel">
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Date</th>
+        </tr>
+        {% for item in recent_items %}
+        <tr>
+            <td>{{ item.title }}</td>
+            <td>
+                {% if item.status == "LOST" %}
+                    <span class="badge badge-lost">LOST</span>
+                {% elif item.status == "FOUND" %}
+                    <span class="badge badge-found">FOUND</span>
+                {% else %}
+                    <span class="badge badge-resolved">RESOLVED</span>
+                {% endif %}
+            </td>
+            <td>{{ item.category }}</td>
+            <td>{{ item.location }}</td>
+            <td>{{ item.date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<p style="margin-top: 16px;">
+    <a class="view-link" href="{% url 'items' %}">View All Items →</a>
+</p>
+
+{% endblock %}

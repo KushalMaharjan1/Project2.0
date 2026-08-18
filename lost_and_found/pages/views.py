@@ -5,116 +5,44 @@ import uuid
 
 from django.conf import settings
 from django.shortcuts import render, redirect
-
-# store data files inside the project base `data/` directory
-DATA_DIR = os.path.join(settings.BASE_DIR, "data")
-CSV_FILE = os.path.join(DATA_DIR, "lost_found.csv")
-JSON_FILE = os.path.join(DATA_DIR, "lost_found.json")
-
-MEDIA_DIR = os.path.join(settings.MEDIA_ROOT)
-IMAGES_SUBDIR = "images"
-
-FIELDNAMES = ["title", "status", "category", "location", "date", "description", "contact", "image"]
-
-
-def read_items():
-    items = []
-    try:
-        with open(CSV_FILE, "r", newline="") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                items.append(row)
-    except FileNotFoundError:
-        print("No records file yet.")
-    return items
-
-
-def write_items(items):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(CSV_FILE, "w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writeheader()
-        for item in items:
-            writer.writerow(item)
-
-
-def sync_json(items):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(JSON_FILE, "w") as file:
-        json.dump(items, file, indent=4)
-
-
-def _save_uploaded_image(f):
-    images_dir = os.path.join(MEDIA_DIR, IMAGES_SUBDIR)
-    os.makedirs(images_dir, exist_ok=True)
-
-    original_name = getattr(f, 'name', '')
-    ext = os.path.splitext(original_name)[1] or ''
-    filename = f"{uuid.uuid4().hex}{ext}"
-    path = os.path.join(images_dir, filename)
-
-    with open(path, 'wb') as dest:
-        for chunk in f.chunks():
-            dest.write(chunk)
-
-    return os.path.join(settings.MEDIA_URL, IMAGES_SUBDIR, filename)
-
-
-def read_json():
-    items = []
-    try:
-        with open(JSON_FILE, "r") as file:
-            items = json.load(file)
-    except FileNotFoundError:
-        print("No JSON records file yet.")
-    return items
+from django.contrib.auth.decorators import login_required
+from .models import Item
 
 
 def home(request):
-    items = read_items()
+    items = Item.objects.all().order_by('-created_at')
 
-    total = len(items)
-    lost = 0
-    found = 0
-    resolved = 0
-
-    for item in items:
-        if item["status"] == "LOST":
-            lost = lost + 1
-        elif item["status"] == "FOUND":
-            found = found + 1
-        elif item["status"] == "RESOLVED":
-            resolved = resolved + 1
+    total = items.count()
+    lost = items.filter(status='LOST').count()
+    found = items.filter(status='FOUND').count()
+    resolved = items.filter(status='RESOLVED').count()
 
     context = {
         "total": total,
         "lost": lost,
         "found": found,
         "resolved": resolved,
-        "recent_items": items,
+        "recent_items": items[:10],
     }
 
     return render(request, "pages/home.html", context)
 
 
 def items(request):
-    all_items = read_items()
+    all_items = Item.objects.all().order_by('-created_at')
 
     # simple search/filter using GET params
     query = request.GET.get("q", "").strip().lower()
     status_filter = request.GET.get("status", "").strip()
 
     if query:
-        all_items = [
-            item for item in all_items
-            if query in item["title"].lower() or query in item["location"].lower()
-        ]
+        all_items = all_items.filter(title__icontains=query) | all_items.filter(location__icontains=query)
 
     if status_filter:
-        all_items = [item for item in all_items if item["status"] == status_filter]
+        all_items = all_items.filter(status=status_filter)
 
     context = {
-        "items": list(enumerate(all_items)),
+        "all_items": all_items,
         "query": query,
         "status_filter": status_filter,
     }
@@ -122,31 +50,25 @@ def items(request):
     return render(request, "pages/items.html", context)
 
 
+@login_required(login_url='login')
 def report(request):
     if request.method == "POST":
-        new_item = {
-            "title": request.POST.get("title", "").strip(),
-            "status": request.POST.get("status", "LOST"),
-            "category": request.POST.get("category", "").strip(),
-            "location": request.POST.get("location", "").strip(),
-            "date": request.POST.get("date", "").strip(),
-            "description": request.POST.get("description", "").strip(),
-            "contact": request.POST.get("contact", "").strip(),
-            "image": "",
-        }
+        new_item = Item(
+            title=request.POST.get("title", "").strip(),
+            status=request.POST.get("status", "LOST"),
+            category=request.POST.get("category", "").strip(),
+            location=request.POST.get("location", "").strip(),
+            date=request.POST.get("date", ""),
+            description=request.POST.get("description", "").strip(),
+            contact=request.POST.get("contact", "").strip(),
+        )
 
         # handle uploaded image
         image_file = request.FILES.get('image') if hasattr(request, 'FILES') else None
         if image_file:
-            try:
-                new_item['image'] = _save_uploaded_image(image_file)
-            except Exception:
-                new_item['image'] = ""
+            new_item.image = image_file
 
-        all_items = read_items()
-        all_items.append(new_item)
-        write_items(all_items)
-        sync_json(all_items)
+        new_item.save()
 
         return redirect("items")
 
@@ -154,11 +76,10 @@ def report(request):
 
 
 def detail(request, item_id):
-    all_items = read_items()
-
-    item = None
-    if 0 <= item_id < len(all_items):
-        item = all_items[item_id]
+    try:
+        item = Item.objects.get(id=item_id)
+    except Item.DoesNotExist:
+        item = None
 
     context = {
         "item": item,
@@ -168,51 +89,45 @@ def detail(request, item_id):
     return render(request, "pages/detail.html", context)
 
 
+@login_required(login_url='login')
 def delete_item(request, item_id):
     if request.method == "POST":
-        all_items = read_items()
-        if 0 <= item_id < len(all_items):
-            all_items.pop(item_id)
-            write_items(all_items)
-            sync_json(all_items)
+        try:
+            item = Item.objects.get(id=item_id)
+            item.delete()
+        except Item.DoesNotExist:
+            pass
 
     return redirect("items")
 
 
+@login_required(login_url='login')
 def edit_item(request, item_id):
-    all_items = read_items()
-
-    if not (0 <= item_id < len(all_items)):
+    try:
+        item = Item.objects.get(id=item_id)
+    except Item.DoesNotExist:
         return redirect("items")
 
     if request.method == "POST":
-        updated_item = {
-            "title": request.POST.get("title", "").strip(),
-            "status": request.POST.get("status", "LOST"),
-            "category": request.POST.get("category", "").strip(),
-            "location": request.POST.get("location", "").strip(),
-            "date": request.POST.get("date", "").strip(),
-            "description": request.POST.get("description", "").strip(),
-            "contact": request.POST.get("contact", "").strip(),
-            "image": all_items[item_id].get('image', '') if item_id < len(all_items) else ''
-        }
+        item.title = request.POST.get("title", "").strip()
+        item.status = request.POST.get("status", "LOST")
+        item.category = request.POST.get("category", "").strip()
+        item.location = request.POST.get("location", "").strip()
+        item.date = request.POST.get("date", "")
+        item.description = request.POST.get("description", "").strip()
+        item.contact = request.POST.get("contact", "").strip()
 
         # handle uploaded image replacement
         image_file = request.FILES.get('image') if hasattr(request, 'FILES') else None
         if image_file:
-            try:
-                updated_item['image'] = _save_uploaded_image(image_file)
-            except Exception:
-                pass
+            item.image = image_file
 
-        all_items[item_id] = updated_item
-        write_items(all_items)
-        sync_json(all_items)
+        item.save()
 
         return redirect("detail", item_id=item_id)
 
     context = {
-        "item": all_items[item_id],
+        "item": item,
         "item_id": item_id,
     }
 

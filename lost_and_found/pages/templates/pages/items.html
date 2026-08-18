@@ -30,11 +30,11 @@
             <th>Date</th>
             <th></th>
         </tr>
-        {% for idx, item in items %}
+        {% for item in all_items %}
         <tr>
             <td>
                 {% if item.image %}
-                    <img src="{{ item.image }}" alt="thumb" style="height:40px; object-fit:cover;"/>
+                    <img src="{{ item.image.url }}" alt="thumb" style="height:40px; object-fit:cover;"/>
                 {% endif %}
             </td>
             <td>{{ item.title }}</td>
@@ -51,11 +51,11 @@
             <td>{{ item.location }}</td>
             <td>{{ item.date }}</td>
             <td style="white-space:nowrap;">
-                <a class="view-link" href="{% url 'detail' idx %}">View</a>
+                <a class="view-link" href="{% url 'detail' item.id %}">View</a>
                 &nbsp;|&nbsp;
-                <a class="view-link" href="{% url 'edit_item' idx %}">Edit</a>
+                <a class="view-link" href="{% url 'edit_item' item.id %}">Edit</a>
                 &nbsp;|&nbsp;
-                <form method="post" action="{% url 'delete_item' idx %}" style="display:inline;" onsubmit="return confirm('Delete this item?');">
+                <form method="post" action="{% url 'delete_item' item.id %}" style="display:inline;" onsubmit="return confirm('Delete this item?');">
                     {% csrf_token %}
                     <button type="submit" style="background:none; border:none; color:#b42318; cursor:pointer; padding:0; font-size:13px; text-decoration:underline;">Delete</button>
                 </form>

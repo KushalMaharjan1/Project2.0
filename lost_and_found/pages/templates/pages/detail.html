@@ -26,7 +26,7 @@
     <p><strong>Description:</strong> {{ item.description }}</p>
     <p><strong>Contact:</strong> {{ item.contact }}</p>
     {% if item.image %}
-        <p style="margin-top:12px;"><img src="{{ item.image }}" alt="item image" style="max-width:100%; height:auto;"/></p>
+        <p style="margin-top:12px;"><img src="{{ item.image.url }}" alt="item image" style="max-width:100%; height:auto;"/></p>
     {% endif %}
 {% else %}
     <p>Item not found.</p>

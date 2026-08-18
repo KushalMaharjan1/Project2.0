@@ -116,16 +116,40 @@
         .detail-panel { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 
         a.view-link { color: #2563eb; text-decoration: none; font-size: 13px; }
+
+        footer {
+            background: #0f2557;
+            color: #fff;
+            text-align: center;
+            padding: 20px 32px;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+
+        footer p { margin: 5px 0; }
     </style>
 </head>
 <body>
 
 <nav>
     <div class="brand">🔎 Lost &amp; Found</div>
-    <div>
-        <a href="{% url 'home' %}">Home</a>
-        <a href="{% url 'items' %}">Browse Items</a>
-        <a href="{% url 'report' %}">Report Item</a>
+    <div style="display: flex; gap: 40px; align-items: center;">
+        <div>
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'items' %}">Browse Items</a>
+            <a href="{% url 'report' %}">Report Item</a>
+        </div>
+        <div style="border-left: 1px solid #dfe7f7; padding-left: 24px; margin-left: 0; display: flex; align-items: center; gap: 16px;">
+            {% if user.is_authenticated %}
+                <span style="color: #dfe7f7; font-size: 13px;">{{ user.username }}</span>
+                <form method="POST" action="{% url 'logout' %}" style="margin: 0; display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: none; color: #dfe7f7; text-decoration: none; cursor: pointer; font-size: 14px; padding: 0;">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+            {% endif %}
+        </div>
     </div>
 </nav>
 
@@ -133,6 +157,11 @@
     {% block content %}
     {% endblock %}
 </main>
+
+<footer>
+    <p>Please contact Lost and Found Department</p>
+    <p>Phone: 986541231</p>
+</footer>
 
 </body>
 </html>

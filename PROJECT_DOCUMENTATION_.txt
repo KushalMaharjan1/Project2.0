@@ -1,0 +1,202 @@
+LOST & FOUND MANAGEMENT SYSTEM
+PROJECT DOCUMENTATION
+
+PROJECT OVERVIEW
+A Django web app for reporting lost/found items, searching records, viewing details,
+editing/deleting items, and tracking LOST, FOUND, and RESOLVED status.
+Data is stored in CSV/JSON files, with uploaded images stored in media/images/.
+
+PROJECT STRUCTURE
+djangoP/                  → Python virtual environment
+lost_and_found/
+  manage.py               → Django command-line tool
+  db.sqlite3              → SQLite database (currently unused)
+  data/
+    lost_found.csv        → Main item data
+    lost_found.json       → JSON copy of CSV data
+  media/images/           → Uploaded images
+  lost_and_found/
+    settings.py           → Django settings
+    urls.py               → Main URL routing
+    wsgi.py / asgi.py     → Server entry points
+  pages/
+    views.py              → Main application logic
+    urls.py               → App URL routes
+    models.py             → Empty; file storage is used instead
+    admin.py / apps.py / tests.py
+    templates/pages/
+      base.html           → Navigation + shared styling
+      home.html           → Homepage/statistics
+      items.html          → Item list/search/filter
+      report.html         → New item form
+      detail.html         → Item details
+      edit.html           → Edit form
+
+DATA STORAGE
+CSV fields:										(CSV - contains all our data)
+title, status, category, location, date, description, contact, image
+
+JSON is synchronized with the CSV.
+Images are saved with UUID filenames to avoid conflicts.
+
+MAIN FUNCTIONS IN views.py
+read_items()
+  → Reads all items from CSV.
+
+write_items(items)
+  → Saves the item list back to CSV.
+
+sync_json(items)
+  → Updates the JSON copy.
+
+_save_uploaded_image(f)
+  → Saves an uploaded image using a unique UUID filename.
+
+read_json()
+  → Reads the JSON file; currently used only for reference.
+
+VIEW FUNCTIONS
+home(request)
+  → "/" | GET
+  → Shows total, lost, found, resolved counts and recent items.
+
+items(request)
+  → "/items/" | GET
+  → Lists items and supports:
+    ?q=laptop              → Search title/location
+    ?status=LOST           → Filter by status
+    ?q=phone&status=FOUND  → Search + status filter
+
+report(request)
+  → "/report/" | GET/POST
+  → GET shows the form.
+  → POST creates an item, optionally saves an image, updates CSV/JSON,
+    then redirects to the items page.
+
+detail(request, item_id)
+  → "/items/<id>/" | GET
+  → Shows one item. The ID is the item's 0-based position in the CSV list.
+
+edit_item(request, item_id)
+  → "/items/<id>/edit/" | GET/POST
+  → GET shows the current data in a form.
+  → POST updates the item and CSV/JSON, then redirects to its detail page.
+
+delete_item(request, item_id)
+  → "/items/<id>/delete/" | POST
+  → Removes the item with pop(), updates CSV/JSON, then redirects to the list.
+
+URL ROUTING
+/admin/                         → Django admin
+/                               → home
+/items/                         → items list
+/report/                        → report item
+/items/<id>/                    → item details
+/items/<id>/edit/               → edit item
+/items/<id>/delete/             → delete item (POST)
+/media/                         → uploaded media in DEBUG mode
+
+TEMPLATES
+base.html
+  → Shared navigation and CSS.
+
+home.html
+  → Dashboard statistics and recent items.
+
+items.html
+  → Search/filter form and item table.
+
+report.html
+  → Form for title, status, category, location, date, description, contact, image.
+
+detail.html
+  → Displays item information, image, edit and delete options.
+
+edit.html
+  → Form for changing an existing item.
+
+BASIC DATA FLOW
+Create:
+  /report/ → form → report() → read CSV → add item → save CSV/JSON → /items/
+
+View:
+  /items/<id>/ → detail() → read CSV → get item → show details
+
+Search:
+  /items/?q=laptop&status=LOST → items() → filter by title/location + status
+
+Edit:
+  /items/<id>/edit/ → edit_item() → load item → update → save CSV/JSON
+
+Delete:
+  /items/<id>/delete/ → delete_item() → pop(item) → save CSV/JSON
+
+DJANGO SETTINGS
+DEBUG = True                  → Development mode
+ALLOWED_HOSTS = ['*']         → Allows any host (development only)
+INSTALLED_APPS includes pages
+MEDIA_URL = '/media/'
+MEDIA_ROOT = 'media/'
+STATIC_URL = '/static/'
+ROOT_URLCONF = 'lost_and_found.urls'
+
+HOW TO RUN
+1. Activate the virtual environment:
+   cd d:\VS\Project2.0-main
+   .\djangoP\Scripts\Activate.ps1
+
+2. Enter the Django project:
+   cd lost_and_found
+
+3. Start the server:
+   python manage.py runserver
+
+4. Open:
+   http://127.0.0.1:8000/
+
+Other useful URLs:
+   /items/
+   /report/
+   /admin/
+
+Stop server with Ctrl+C.
+
+USEFUL DJANGO COMMANDS
+python manage.py runserver
+  → Start development server
+
+python manage.py check
+  → Check for configuration errors
+
+python manage.py test
+  → Run tests
+
+python manage.py shell
+  → Open Django shell
+
+python manage.py makemigrations
+  → Create migration files (not currently needed)
+
+python manage.py migrate
+  → Apply migrations (not currently needed)
+
+python manage.py createsuperuser
+  → Create admin user
+
+DEPENDENCIES
+Django 6.1
+asgiref 3.12.1
+sqlparse 0.6.0
+tzdata 2026.3
+pip 26.1.2
+
+
+IMPORTANT FILE ROLES
+manage.py       → Django commands
+settings.py     → Project configuration
+urls.py         → URL routing
+views.py        → Request handling/business logic
+lost_found.csv  → Main persistent data
+lost_found.json → Synchronized data copy
+media/images/   → Uploaded images
+
